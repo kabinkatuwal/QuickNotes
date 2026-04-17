@@ -24,6 +24,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,11 +36,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.finalprojectquicknotes.viewmodel.NotebookViewModel
 
 @Composable
-fun NotebookUI() {
-    var title by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
+fun NotebookUI(
+    viewModel: NotebookViewModel = viewModel(),
+    onBack: () -> Unit
+) {
+    val title by viewModel.title.collectAsState()
+    val content by viewModel.content.collectAsState()
 
     Column(
         modifier = Modifier
@@ -55,7 +61,7 @@ fun NotebookUI() {
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { }) {
+            IconButton(onClick = { onBack() }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back"
@@ -75,7 +81,7 @@ fun NotebookUI() {
                 )
             }
 
-            TextButton(onClick = { }) {
+            TextButton(onClick = { viewModel.saveNote() }) {
                 Text(
                     text = "Save",
                     color = MaterialTheme.colorScheme.primary
@@ -88,7 +94,7 @@ fun NotebookUI() {
         // Title Field
         TextField(
             value = title,
-            onValueChange = { title = it },
+            onValueChange = { viewModel.onTitleChange(it) },
             placeholder = {
                 Text(
                     "Title",
@@ -111,8 +117,8 @@ fun NotebookUI() {
 
         // Note Area
         TextField(
-            value = note,
-            onValueChange = { note = it },
+            value = content,
+            onValueChange = { viewModel.onContentChange(it) },
             placeholder = {
                 Text(
                     "Start writing your thoughts...",
@@ -130,18 +136,3 @@ fun NotebookUI() {
     }
 }
 
-@Composable
-fun Pill(text: String) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(Color(0xFFF0F0F0))
-            .padding(horizontal = 12.dp, vertical = 4.dp)
-    ) {
-        Text(
-            text = text,
-            fontSize = 12.sp,
-            color = Color.DarkGray
-        )
-    }
-}

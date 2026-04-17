@@ -17,8 +17,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             FinalProjectQuickNotesTheme {
                 //HomeScreen()
-                NotebookUI()
-//               QuickNotesDrawer()
+                //NotebookUI()
+               //QuickNotesDrawer()
+                AppNavigation()
             }
         }
     }

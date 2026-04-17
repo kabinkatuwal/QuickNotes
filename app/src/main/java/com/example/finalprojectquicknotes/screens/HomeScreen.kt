@@ -1,6 +1,7 @@
 package com.example.finalprojectquicknotes.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -32,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,10 +47,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.finalprojectquicknotes.Note
+import com.example.finalprojectquicknotes.viewmodel.HomeScreenViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
-fun HomeScreen() {
-    var searchText by remember { mutableStateOf("") }
+fun HomeScreen(
+    viewModel: HomeScreenViewModel = viewModel(),
+    onNoteClick: (Note) -> Unit,
+    onAddNote: () -> Unit,
+    onOpenDrawer: () -> Unit
+) {
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val notes by viewModel.filteredNotes.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -64,7 +79,7 @@ fun HomeScreen() {
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { /* open drawer */ }) {
+                IconButton(onClick = { onOpenDrawer() }) {
                     Icon(Icons.Filled.Menu, contentDescription = "Menu")
                 }
                 Text(
@@ -83,8 +98,8 @@ fun HomeScreen() {
 
             // Search Bar
             TextField(
-                value = searchText,
-                onValueChange = { searchText = it },
+                value = searchQuery,
+                onValueChange = { viewModel.onSearchQueryChange(it) },
                 placeholder = { Text("Search your thoughts...") },
                 leadingIcon = {
                     Icon(Icons.Filled.Search, contentDescription = null)
@@ -103,51 +118,24 @@ fun HomeScreen() {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Scrollable note list
+            // Note List
             LazyColumn {
                 item {
                     SectionHeader("Today")
-                }//items in here are placeholders
-                item {
-                    NoteCard(
-                        title = "Project Aurora Brainstorming",
-                        time = "10:45 AM",
-                        preview = "Consider utilizing a bento-grid layout for the new dashboard. Need to focus on tonal...",
-                        tag = "DESIGN"
-                    )
                 }
-                item {
+                items(notes) { note ->
                     NoteCard(
-                        title = "Weekly Grocery Checklist",
-                        time = "09:12 AM",
-                        preview = "Almond milk, Sourdough bread, Avocados, Greek yogurt, Fresh basil, Sea salt, and da..."
-                    )
-                }
-                item {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    SectionHeader("Yesterday")
-                }
-                item {
-                    NoteCard(
-                        title = "Digital Journal Entry",
-                        time = "Mar 22",
-                        preview = "Reflecting on the progre...",
-                        showIcon = true
-                    )
-                }
-                item {
-                    NoteCard(
-                        title = "Voice Memo: UI Rhythms",
-                        time = "Mar 22",
-                        preview = "Audio recording from th...",
-                        showMicIcon = true
+                        title = note.title,
+                        time = formatTimestamp(note.timestamp),
+                        preview = note.content,
+                        onClick = { onNoteClick(note) }
                     )
                 }
             }
         }
 
         FloatingActionButton(
-            onClick = { },
+            onClick = { onAddNote() },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
@@ -155,6 +143,11 @@ fun HomeScreen() {
             Icon(Icons.Filled.Add, contentDescription = "Add note")
         }
     }
+}
+
+fun formatTimestamp(timestamp: Long): String {
+    val sdf = SimpleDateFormat("hh:mm a", Locale.getDefault())
+    return sdf.format(Date(timestamp))
 }
 
 @Composable
@@ -173,13 +166,13 @@ fun NoteCard(
     time: String,
     preview: String,
     tag: String? = null,
-    showIcon: Boolean = false,
-    showMicIcon: Boolean = false
+    onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 4.dp)
+            .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFFF7F7F9)
@@ -192,26 +185,6 @@ fun NoteCard(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.Top
         ) {
-            // Optional icon on the left
-            if (showIcon || showMicIcon) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFE8E4F4)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = if (showMicIcon) Icons.Filled.Mic else Icons.Filled.Description,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = Color(0xFF6C5FC7)
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-            }
-
-            // Title + preview + tag
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
@@ -242,8 +215,6 @@ fun NoteCard(
                     }
                 }
             }
-
-            // Time on the right
             Text(
                 text = time,
                 style = MaterialTheme.typography.bodySmall,
