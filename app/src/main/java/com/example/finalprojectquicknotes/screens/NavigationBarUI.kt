@@ -25,6 +25,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,10 +37,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.finalprojectquicknotes.viewmodel.NavigationBarViewModel
 
 @Composable
-fun QuickNotesDrawer() {
+fun QuickNotesDrawer(
+    viewModel: NavigationBarViewModel = viewModel(),
+    onClose: () -> Unit,
+    onNavigate: (String) -> Unit
+) {
     var foldersExpanded by remember { mutableStateOf(true) }
+    val selectedItem by viewModel.selectedItem.collectAsState()
 
     Column(
         modifier = Modifier
@@ -61,23 +69,22 @@ fun QuickNotesDrawer() {
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
-            IconButton(onClick = { /* close drawer */ }) {
-                Icon(
-                    imageVector = Icons.Filled.Close,
-                    contentDescription = "Close"
-                )
+            IconButton(onClick = { onClose() }) {
+                Icon(Icons.Filled.Close, contentDescription = "Close")
             }
         }
 
-        // All Notes
         DrawerItem(
             icon = Icons.Filled.Description,
             label = "All notes",
-            selected = true,
-            onClick = { }
+            selected = selectedItem == "all_notes",
+            onClick = {
+                viewModel.onItemSelected("all_notes")
+                onNavigate("all_notes")
+            }
         )
 
-        // Folders (expandable)
+        // Folders
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -91,10 +98,7 @@ fun QuickNotesDrawer() {
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = "Folders",
-                modifier = Modifier.weight(1f)
-            )
+            Text(text = "Folders", modifier = Modifier.weight(1f))
             Icon(
                 imageVector = if (foldersExpanded)
                     Icons.Filled.KeyboardArrowUp
@@ -104,26 +108,35 @@ fun QuickNotesDrawer() {
             )
         }
 
-        // Subfolders
         if (foldersExpanded) {
-            SubfolderItem(label = "Work", onClick = { })
-            SubfolderItem(label = "Personal", onClick = { })
+            SubfolderItem(label = "Work", onClick = {
+                viewModel.onItemSelected("work")
+                onNavigate("work")
+            })
+            SubfolderItem(label = "Personal", onClick = {
+                viewModel.onItemSelected("personal")
+                onNavigate("personal")
+            })
         }
 
-        // Shared Notes
         DrawerItem(
             icon = Icons.Filled.Group,
             label = "Shared notes",
-            selected = false,
-            onClick = { }
+            selected = selectedItem == "shared_notes",
+            onClick = {
+                viewModel.onItemSelected("shared_notes")
+                onNavigate("shared_notes")
+            }
         )
 
-        // Trash
         DrawerItem(
             icon = Icons.Filled.Delete,
             label = "Trash",
-            selected = false,
-            onClick = { }
+            selected = selectedItem == "trash",
+            onClick = {
+                viewModel.onItemSelected("trash")
+                onNavigate("trash")
+            }
         )
     }
 }
