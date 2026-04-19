@@ -4,33 +4,37 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.finalprojectquicknotes.screens.HomeScreen
 import com.example.finalprojectquicknotes.screens.NotebookUI
 import com.example.finalprojectquicknotes.screens.QuickNotesDrawer
 import com.example.finalprojectquicknotes.viewmodel.HomeScreenViewModel
 import com.example.finalprojectquicknotes.viewmodel.NavigationBarViewModel
+import com.example.finalprojectquicknotes.viewmodel.NoteViewModel
 import com.example.finalprojectquicknotes.viewmodel.NotebookViewModel
 import kotlinx.coroutines.launch
 
-// Navigation.kt
 sealed class Screen(val route: String) {
     object Home : Screen("home")
-    object Notebook : Screen("notebook")
+    object Notebook : Screen("notebook/{noteId}") {
+        fun createRoute(noteId: Int) = "notebook/$noteId"
+    }
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(factory: NoteViewModel.ViewModelFactory) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = Screen.Home.route) {
-
         composable(Screen.Home.route) {
-            val homeViewModel: HomeScreenViewModel = viewModel()
+            val homeViewModel: HomeScreenViewModel = viewModel(factory = factory)
             val drawerViewModel: NavigationBarViewModel = viewModel()
             val drawerState = rememberDrawerState(DrawerValue.Closed)
             val scope = rememberCoroutineScope()
@@ -47,16 +51,29 @@ fun AppNavigation() {
             ) {
                 HomeScreen(
                     viewModel = homeViewModel,
-                    onNoteClick = { navController.navigate(Screen.Notebook.route) },
-                    onAddNote = { navController.navigate(Screen.Notebook.route) },
+                    onNoteClick = { note ->
+                        navController.navigate(Screen.Notebook.createRoute(note.id))
+                    },
+                    onAddNote = {
+                        navController.navigate(Screen.Notebook.createRoute(-1))
+                    },
                     onOpenDrawer = { scope.launch { drawerState.open() } }
                 )
             }
         }
-        composable(Screen.Notebook.route) {
-            val viewModel: NotebookViewModel = viewModel()
+        composable(
+            route = Screen.Notebook.route,
+            arguments = listOf(navArgument("noteId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val noteId = backStackEntry.arguments?.getInt("noteId") ?: -1
+            val notebookViewModel: NotebookViewModel = viewModel(factory = factory)
+
+            LaunchedEffect(noteId) {
+                notebookViewModel.loadNote(noteId)
+            }
+
             NotebookUI(
-                viewModel = viewModel,
+                viewModel = notebookViewModel,
                 onBack = { navController.popBackStack() }
             )
         }

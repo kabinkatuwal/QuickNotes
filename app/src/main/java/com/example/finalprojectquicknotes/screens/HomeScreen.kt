@@ -48,7 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.finalprojectquicknotes.Note
+import com.example.finalprojectquicknotes.data.Note
 import com.example.finalprojectquicknotes.viewmodel.HomeScreenViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
